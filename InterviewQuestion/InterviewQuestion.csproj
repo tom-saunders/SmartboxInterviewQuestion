@@ -14,4 +14,8 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Stateless" Version="5.12.0" />
+  </ItemGroup>
+
 </Project>
