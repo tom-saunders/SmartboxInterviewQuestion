@@ -45,7 +45,7 @@ namespace InterviewQuestion
             Console.ReadLine();
         }
 
-        private static void OnFrameChanged(object sender, IFrame e)
+        private static void OnFrameChanged(object? sender, IFrame e)
         {
             Console.WriteLine("Frame received");
         }

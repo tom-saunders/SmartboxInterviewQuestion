@@ -8,27 +8,37 @@ namespace InterviewQuestion
     /// <summary>
     /// New file for code review
     /// </summary>
+    // I'd probably have this as a shared lib rather than built into the app?
     public class SeeTechEyeGazeCamera : ICamera
     {
-        public ISeeTechDriver _driver;
-        public CancellationTokenSource _cancellation;
-        public event EventHandler<IFrame> FrameChanged;
+        public event EventHandler<IFrame>? FrameChanged;
+
+        private readonly ISeeTechDriver _driver;
+        private readonly CancellationTokenSource _cancellation;
 
         public SeeTechEyeGazeCamera(ISeeTechDriver driver)
         {
             // csharp q - can this be null?
+            //     not any more
             _driver = driver;
+            _cancellation = new();
         }
 
         public void Start()
         {
             // no error handling
+            //    is now handling failure to connect but maybe not gracefully
             // this blocks? should we handle this async and allow other tasks to progress?
-            _driver.Connect();
-
-            // starts even if we didn't connect
-            // can/should this be created here or in ctor? can it fail?
-            _cancellation = new CancellationTokenSource();
+            //     let caller deal with any async concern
+            SeeTechReturnCode connect_rc = _driver.Connect();
+            // seems there's no way to ask the compiler to enforce enum handling (e.g. -Wswitch-enum in g++)
+            // just check explicitly if not success in case future error cases are added?
+            if (connect_rc != SeeTechReturnCode.Success)
+            {
+                // This seems like a nonideal logging approach but that seems outside scope
+                Console.Error.WriteLine("Failed to connect to SeeTech camera: " + connect_rc);
+                throw new InvalidOperationException("Failed to connect to SeeTech camera: " + connect_rc);
+            }
 
             // csharp q - is this a busy loop?
             //     see Loop method below - not part of the language itself
@@ -41,7 +51,7 @@ namespace InterviewQuestion
             // no error handling
             // if we failed Connect() then do we fail expectations calling Disconnect()?
             _driver.Disconnect();
-            
+
             // if we fail disconnect what state do we get left in? are we leaking a resource?
             _cancellation.Cancel();
         }
@@ -60,7 +70,7 @@ namespace InterviewQuestion
                 var p = new Point(frame[0], frame[1]);
                 var r = new Point(frame[2], frame[3]);
                 var l = new Point(frame[4], frame[5]);
-                FrameChanged(this, new SeeTechFrame
+                FrameChanged?.Invoke(this, new SeeTechFrame
                 {
                     GazePosition = p,
                     LeftEye = l,
